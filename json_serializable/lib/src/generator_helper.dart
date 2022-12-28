@@ -82,6 +82,7 @@ class GeneratorHelper extends HelperCore with EncodeHelper, DecodeHelper {
 
     var accessibleFieldSet = accessibleFields.values.toSet();
     if (config.createFactory) {
+      // accessibleFields内为所有变量 例如 (List<SpaceHomeListGroup>? groups, int? refreshTimestamp, int? errorCode)
       final createResult = createFactory(accessibleFields, unavailableReasons);
       yield createResult.output;
 

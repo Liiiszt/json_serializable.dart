@@ -56,23 +56,27 @@ class TypeHelperCtx
         (TypeHelper th) => th.serialize(targetType, expression, this),
       );
 
+  //String?/json['title']/null
   @override
   Object deserialize(
     DartType targetType,
     String expression, {
     String? defaultValue,
   }) {
-    final value = _run(
-      targetType,
-      expression,
-      (TypeHelper th) => th.deserialize(
-        targetType,
-        expression,
-        this,
-        defaultValue != null,
-      ),
-    );
-
+    // print(_helperCore.allTypeHelpers);
+    // final value = _run(
+    //   targetType,
+    //   expression,
+    //   (TypeHelper th) => th.deserialize(
+    //     targetType,
+    //     expression,
+    //     this,
+    //     defaultValue != null,
+    //   ),
+    // );
+    //value: json['title'] as String?
+    final value = _newRun(targetType, expression);
+    print('value: $value,nullable: ${targetType.isNullableType},defaultValue: $defaultValue');
     return DefaultContainer.deserialize(
       value,
       nullable: targetType.isNullableType,
@@ -85,10 +89,48 @@ class TypeHelperCtx
     String expression,
     Object? Function(TypeHelper) invoke,
   ) =>
+      //TypeHelper是父类，有大约15个子类，每个子类都有一个serialize和deserialize方法
+      //ValueHelper是最常见的一个子类
       _helperCore.allTypeHelpers.map(invoke).firstWhere(
             (r) => r != null,
             orElse: () => throw UnsupportedTypeError(targetType, expression),
           ) as Object;
+
+  Object _newRun(
+    DartType targetType, //int?
+    String expression, //json['count']
+
+  ) {
+    final jsonKeyName = expression.split('\'')[1].split('\'')[0]; //count
+    final result = StringBuffer();
+    if (targetType.isDartCoreInt) {
+      result
+        ..write('$targetType $jsonKeyName;')
+        ..write('if($expression != null) {')
+        ..write('final dynamic value = $expression;')
+        ..write(
+            '$jsonKeyName = value is int ? value : value is double ? value.toInt() : value is String ? int.parse(value) : null;}');
+    } else if (targetType.isDartCoreBool) {
+      result
+        ..write('$targetType $jsonKeyName;')
+        ..write('if($expression != null) {')
+        ..write('final dynamic value = $expression;')
+        ..write(
+            '$jsonKeyName = value is bool ? value : value is String ? value.toLowerCase() == \'true\' || value.toLowerCase() == \'yes\' : null;}');
+    } else if (targetType.isDartCoreString) {
+      result
+        ..write('$targetType $jsonKeyName;')
+        ..write('if($expression != null) {')
+        ..write('final dynamic value = $expression;')
+        ..write(
+            '$jsonKeyName = value is String ? value : value.toString();}')
+        
+            ;
+            
+    }
+
+    return result;
+  }
 }
 
 class _ConvertPair {

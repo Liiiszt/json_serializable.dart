@@ -30,11 +30,14 @@ abstract class DecodeHelper implements HelperCore {
     final buffer = StringBuffer();
 
     final mapType = config.anyMap ? 'Map' : 'Map<String, dynamic>';
+    print('$targetClassReference');
+    //targetClassReference className类名
     buffer.write('$targetClassReference '
         '${prefix}FromJson${genericClassArgumentsImpl(true)}'
         '($mapType json');
 
     if (config.genericArgumentFactories) {
+      // 常用于泛型类
       for (var arg in element.typeParameters) {
         final helperName = fromJsonForType(
           arg.instantiate(nullabilitySuffix: NullabilitySuffix.none),
@@ -56,17 +59,22 @@ abstract class DecodeHelper implements HelperCore {
         _deserializeForField(accessibleFields[paramOrFieldName]!,
             ctorParam: ctorParam);
 
+    // print('--unNamedConstructorParameters: ${element.unnamedConstructor?.parameters}');
+    // print('--keys:${accessibleFields.keys},values:${accessibleFields.values}');
+//--------------------------------------------------------
     final data = _writeConstructorInvocation(
       element,
-      config.constructor,
-      accessibleFields.keys,
-      accessibleFields.values
+      config.constructor,      //空字符串
+      accessibleFields.keys,  //(title, order, cards, name)
+      accessibleFields.values //(String? title, int? order, List<CardBaseModel<Map<dynamic, dynamic>>> cards, String? name)
           .where((fe) => element.lookUpSetter(fe.name, element.library) != null)
           .map((fe) => fe.name)
           .toList(),
       unavailableReasons,
       deserializeFun,
     );
+    // print('----dataContent: ${data.content}');
+    // print('----dataFieldsToSet: ${data.fieldsToSet}');
 
     final checks = _checkKeys(
       accessibleFields.values
@@ -74,6 +82,7 @@ abstract class DecodeHelper implements HelperCore {
     ).toList();
 
     if (config.checked) {
+      //这里没用到
       final classLiteral = escapeDartString(element.name);
 
       final sectionBuffer = StringBuffer()
@@ -126,32 +135,41 @@ abstract class DecodeHelper implements HelperCore {
         ..write(',);');
       fromJsonLines.add(sectionBuffer.toString());
     } else {
-      fromJsonLines.addAll(checks);
+      fromJsonLines.addAll(checks); // checks打印出来全是空数组，直接忽略
 
       final sectionBuffer = StringBuffer()..write('''
   ${data.content}''');
       for (final field in data.fieldsToSet) {
         sectionBuffer
           ..writeln()
-          ..write('    ..$field = ')
+          // ..write('    ..$field = ')
           ..write(deserializeFun(field));
+      }
+      sectionBuffer.write('return ${element.name}()');
+      for (final field in data.fieldsToSet) {
+        sectionBuffer.write('..$field = $field')
+          ;
       }
       sectionBuffer.writeln(';');
       fromJsonLines.add(sectionBuffer.toString());
     }
 
-    if (fromJsonLines.length == 1) {
-      buffer
-        ..write('=>')
-        ..write(fromJsonLines.single);
-    } else {
+    // if (fromJsonLines.length == 1) {
       buffer
         ..write('{')
-        ..writeAll(fromJsonLines.take(fromJsonLines.length - 1))
-        ..write('return ')
-        ..write(fromJsonLines.last)
+        ..write(fromJsonLines.single)
         ..write('}');
-    }
+    // } else {
+    //   // 目前业务中没用到这里
+    //   buffer
+    //     ..write('{')
+    //     ..writeAll(fromJsonLines.take(fromJsonLines.length - 1))
+    //     ..write('return ')
+    //     ..write(fromJsonLines.last)
+    //     ..write('}');
+    // }
+
+    print('----buffer: ${buffer.toString()}');
 
     return CreateFactoryResult(buffer.toString(), data.usedCtorParamsAndFields);
   }
@@ -193,12 +211,12 @@ abstract class DecodeHelper implements HelperCore {
   /// If [checkedProperty] is `true`, we're using this function to write to a
   /// setter.
   String _deserializeForField(
-    FieldElement field, {
-    ParameterElement? ctorParam,
+    FieldElement field, {         //String? title
+    ParameterElement? ctorParam,  //{required String? title}
     bool checkedProperty = false,
   }) {
-    final jsonKeyName = safeNameAccess(field);
-    final targetType = ctorParam?.type ?? field.type;
+    final jsonKeyName = safeNameAccess(field);        //'title'
+    final targetType = ctorParam?.type ?? field.type; //String?
     final contextHelper = getHelperContext(field);
     final jsonKey = jsonKeyFor(field);
     final defaultValue = jsonKey.defaultValue;
@@ -206,9 +224,9 @@ abstract class DecodeHelper implements HelperCore {
 
     String deserialize(String expression) => contextHelper
         .deserialize(
-          targetType,
-          expression,
-          defaultValue: defaultValue,
+          targetType,                   //String?
+          expression,                   //json['title']
+          defaultValue: defaultValue,   //null
         )
         .toString();
 
@@ -228,8 +246,8 @@ abstract class DecodeHelper implements HelperCore {
         );
 
         value = deserialize(
-          readValueFunc == null
-              ? 'json[$jsonKeyName]'
+          readValueFunc == null   // true
+              ? 'json[$jsonKeyName]'    //json['title']
               : '$readValueFunc(json, $jsonKeyName)',
         );
       }
@@ -276,7 +294,10 @@ _ConstructorData _writeConstructorInvocation(
   final constructorArguments = <ParameterElement>[];
   final namedConstructorArguments = <ParameterElement>[];
 
+//ctor:SpaceHomeListGroup SpaceHomeListGroup({required String? title, required int? order, required List<CardBaseModel<Map<dynamic, dynamic>>> cards, required String? name})
+//ctor.parameters:[{required String? title}, {required int? order}, {required List<CardBaseModel<Map<dynamic, dynamic>>> cards}, {required String? name}]
   for (final arg in ctor.parameters) {
+    //异常处理
     if (!availableConstructorParameters.contains(arg.name)) {
       if (arg.isRequired) {
         var msg = 'Cannot populate the required constructor '
@@ -309,32 +330,36 @@ _ConstructorData _writeConstructorInvocation(
 
   final constructorExtra = constructorName.isEmpty ? '' : '.$constructorName';
 
-  final buffer = StringBuffer()
-    ..write(
-      '$className'
-      '${genericClassArguments(classElement, false)}'
-      '$constructorExtra(',
-    );
+  final buffer = StringBuffer();
+    // ..write(
+    //   '$className'
+    //   '${genericClassArguments(classElement, false)}'
+    //   '$constructorExtra(',
+    // );
+  // print('constructorArguments:$constructorArguments, namedConstructorArguments:$namedConstructorArguments');
   if (constructorArguments.isNotEmpty) {
     buffer
       ..writeln()
       ..writeAll(constructorArguments.map((paramElement) {
         final content =
             deserializeForField(paramElement.name, ctorParam: paramElement);
-        return '      $content,\n';
+        return '      $content,\n';// $content:title: json['title'] as String?
       }));
   }
+  //namedConstructorArguments:[{required String? title}, {required int? order}, {required List<CardBaseModel<Map<dynamic, dynamic>>> cards}, {required String? name}]
   if (namedConstructorArguments.isNotEmpty) {
     buffer
       ..writeln()
       ..writeAll(namedConstructorArguments.map((paramElement) {
+        // print('paramElement:$paramElement');
         final value =
-            deserializeForField(paramElement.name, ctorParam: paramElement);
+            deserializeForField(paramElement.name, ctorParam: paramElement);//name:title
         return '      ${paramElement.name}: $value,\n';
       }));
   }
 
-  buffer.write(')');
+  // buffer.write('return $className()');
+  // buffer.write(')');
 
   usedCtorParamsAndFields.addAll(remainingFieldsForInvocationBody);
 

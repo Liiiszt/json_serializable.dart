@@ -72,6 +72,7 @@ class JsonHelper extends TypeHelper<TypeHelperContextWithConfig> {
     TypeHelperContextWithConfig context,
     bool defaultProvided,
   ) {
+    // print('json_helper.dart: targetType: $targetType, expression: $expression, context: $context, defaultProvided: $defaultProvided');
     if (targetType is! InterfaceType) {
       return null;
     }

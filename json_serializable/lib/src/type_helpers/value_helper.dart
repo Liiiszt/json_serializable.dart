@@ -29,6 +29,7 @@ class ValueHelper extends TypeHelper {
     return null;
   }
 
+//int?/json['order']
   @override
   String? deserialize(
     DartType targetType,
@@ -36,19 +37,36 @@ class ValueHelper extends TypeHelper {
     TypeHelperContext context,
     bool defaultProvided,
   ) {
+    print('value_helper.dart: deserialize: targetType: $targetType, expression: $expression, context: $context, defaultProvided: $defaultProvided');
+    //targetType: String?, expression: json['title'], context: Instance of 'TypeHelperCtx', defaultProvided: false
     if (targetType.isDartCoreObject && !targetType.isNullableType) {
+      // print('value_helper.dart:----01');
       final question = defaultProvided ? '?' : '';
       return '$expression as Object$question';
     } else if (targetType.isDartCoreObject || targetType.isDynamic) {
+      // print('value_helper.dart:----02');
       // just return it as-is. We'll hope it's safe.
       return expression;
-    } else if (targetType.isDartCoreDouble) {
+    } else if (targetType.isDartCoreDouble) {                               //double
       final targetTypeNullable = defaultProvided || targetType.isNullableType;
       final question = targetTypeNullable ? '?' : '';
       return '($expression as num$question)$question.toDouble()';
-    } else if (simpleJsonTypeChecker.isAssignableFromType(targetType)) {
+    // } else if (targetType.isDartCoreInt) {                                  //int
+        // if (json['order'] != null) {
+        //   dynamic obj = json['order'];
+        //   if (obj is int) {
+        //     order = obj;
+        //   } else if (obj is double) {
+        //     order = obj.toInt();
+        //   } else if (obj is String) {
+        //     order = int.parse(obj);
+        //   }
+        // }
+      // return '';
+
+    } else if (simpleJsonTypeChecker.isAssignableFromType(targetType)) {    //num(int), bool, String
       final typeCode = typeToCode(targetType, forceNullable: defaultProvided);
-      return '$expression as $typeCode';
+      return '$expression as $typeCode';          //局限：List中有嵌套调用。整体技术方案非常复杂
     }
 
     return null;

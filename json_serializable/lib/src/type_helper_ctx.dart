@@ -58,8 +58,8 @@ class TypeHelperCtx
 
   @override
   Object deserialize(
-    DartType targetType,
-    String expression, {
+    DartType targetType, //int?
+    String expression, { //json['itemNumber']
     String? defaultValue,
   }) {
     final value = _run(
@@ -73,6 +73,36 @@ class TypeHelperCtx
       ),
     );
 
+    if (_isBasicType(targetType) && expression.contains('[')) {
+      final keyName = expression.split('[')[1].split(']')[0];
+      final sb = StringBuffer()..write('MapParser.');
+      if (targetType.isDartCoreInt) {
+        if (targetType.isNullableType && defaultValue == null) {
+          sb.write('readInt(json, $keyName)');
+        } else {
+          sb.write('getInt(json, $keyName, ${defaultValue ?? 0})');
+        }
+      } else if (targetType.isDartCoreBool) {
+        if (targetType.isNullableType && defaultValue == null) {
+          sb.write('readBool(json, $keyName)');
+        } else {
+          sb.write('getBool(json, $keyName, ${defaultValue ?? false})');
+        }
+      } else if (targetType.isDartCoreString) {
+        if (targetType.isNullableType && defaultValue == null) {
+          sb.write('readString(json, $keyName)');
+        } else {
+          sb.write('getString(json, $keyName, ${defaultValue ?? "''"})');
+        }
+      } else if (targetType.isDartCoreDouble) {
+        if (targetType.isNullableType && defaultValue == null) {
+          sb.write('readDouble(json, $keyName)');
+        } else {
+          sb.write('getDouble(json, $keyName, ${defaultValue ?? 0.0})');
+        }
+      }
+      return sb.toString();
+    }
     return DefaultContainer.deserialize(
       value,
       nullable: targetType.isNullableType,
@@ -84,11 +114,23 @@ class TypeHelperCtx
     DartType targetType,
     String expression,
     Object? Function(TypeHelper) invoke,
-  ) =>
-      _helperCore.allTypeHelpers.map(invoke).firstWhere(
-            (r) => r != null,
-            orElse: () => throw UnsupportedTypeError(targetType, expression),
-          ) as Object;
+  ) {
+    if (_isBasicType(targetType) && expression.contains('[')) {
+      return '';
+    }
+
+    return _helperCore.allTypeHelpers.map(invoke).firstWhere(
+          (r) => r != null,
+          orElse: () => throw UnsupportedTypeError(targetType, expression),
+        ) as Object;
+  }
+  
+  bool _isBasicType(DartType type) {
+    if (type.isDartCoreInt || type.isDartCoreBool || type.isDartCoreString || type.isDartCoreDouble) {
+      return true;
+    }
+    return false;
+  }
 }
 
 class _ConvertPair {

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:json_annotation/json_annotation.dart';
+import 'map_parser.dart';
 
 part 'generic_response_class_example.g.dart';
 

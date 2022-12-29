@@ -4,6 +4,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+import 'map_parser.dart';
 part 'json_converter_example.g.dart';
 
 /// An example of using [JsonConverter] to change the encode/decode of a default

@@ -19,9 +19,9 @@ Map<String, dynamic> _$DateTimeExampleToJson(DateTimeExample instance) =>
 GenericCollection<T> _$GenericCollectionFromJson<T>(
         Map<String, dynamic> json) =>
     GenericCollection<T>(
-      page: json['page'] as int?,
-      totalResults: json['total_results'] as int?,
-      totalPages: json['total_pages'] as int?,
+      page: MapParser.readInt(json, 'page'),
+      totalResults: MapParser.readInt(json, 'total_results'),
+      totalPages: MapParser.readInt(json, 'total_pages'),
       results: (json['results'] as List<dynamic>?)
           ?.map(_Converter<T>().fromJson)
           .toList(),
@@ -37,8 +37,8 @@ Map<String, dynamic> _$GenericCollectionToJson<T>(
     };
 
 CustomResult _$CustomResultFromJson(Map<String, dynamic> json) => CustomResult(
-      json['name'] as String,
-      json['size'] as int,
+      MapParser.getString(json, 'name', ''),
+      MapParser.getInt(json, 'size', 0),
     );
 
 Map<String, dynamic> _$CustomResultToJson(CustomResult instance) =>

@@ -7,10 +7,10 @@ part of 'example.dart';
 // **************************************************************************
 
 Person _$PersonFromJson(Map<String, dynamic> json) => Person(
-      json['firstName'] as String,
-      json['lastName'] as String,
+      MapParser.getString(json, 'firstName', ''),
+      MapParser.getString(json, 'lastName', ''),
       DateTime.parse(json['date-of-birth'] as String),
-      middleName: json['middleName'] as String?,
+      middleName: MapParser.readString(json, 'middleName'),
       lastOrder: json['last-order'] == null
           ? null
           : DateTime.parse(json['last-order'] as String),
@@ -41,9 +41,9 @@ Map<String, dynamic> _$PersonToJson(Person instance) {
 Order _$OrderFromJson(Map<String, dynamic> json) => Order(
       Order._dateTimeFromEpochUs(json['date'] as int),
     )
-      ..count = json['count'] as int?
-      ..itemNumber = json['itemNumber'] as int?
-      ..isRushed = json['isRushed'] as bool?
+      ..count = MapParser.readInt(json, 'count')
+      ..itemNumber = MapParser.readInt(json, 'itemNumber')
+      ..isRushed = MapParser.readBool(json, 'isRushed')
       ..item = json['item'] == null
           ? null
           : Item.fromJson(json['item'] as Map<String, dynamic>)
@@ -68,12 +68,39 @@ Map<String, dynamic> _$OrderToJson(Order instance) {
 }
 
 Item _$ItemFromJson(Map<String, dynamic> json) => Item()
-  ..count = json['count'] as int?
-  ..itemNumber = json['itemNumber'] as int?
-  ..isRushed = json['isRushed'] as bool?;
+  ..count = MapParser.readInt(json, 'count')
+  ..itemNumber = MapParser.readInt(json, 'itemNumber')
+  ..isRushed = MapParser.readBool(json, 'isRushed');
 
 Map<String, dynamic> _$ItemToJson(Item instance) => <String, dynamic>{
       'count': instance.count,
       'itemNumber': instance.itemNumber,
       'isRushed': instance.isRushed,
     };
+
+// **************************************************************************
+// JsonLiteralGenerator
+// **************************************************************************
+
+final _$glossaryDataJsonLiteral = {
+  'glossary': {
+    'title': 'example glossary',
+    'GlossDiv': {
+      'title': 'S',
+      'GlossList': {
+        'GlossEntry': {
+          'ID': 'SGML',
+          'SortAs': 'SGML',
+          'GlossTerm': 'Standard Generalized Markup Language',
+          'Acronym': 'SGML',
+          'Abbrev': 'ISO 8879:1986',
+          'GlossDef': {
+            'para': 'A meta-markup language, used to create markup languages.',
+            'GlossSeeAlso': ['GML', 'XML']
+          },
+          'GlossSee': 'markup'
+        }
+      }
+    }
+  }
+};

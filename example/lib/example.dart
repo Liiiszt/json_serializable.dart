@@ -4,6 +4,7 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+import 'map_parser.dart';
 part 'example.g.dart';
 
 @JsonSerializable()
@@ -83,5 +84,5 @@ class Item {
   Map<String, dynamic> toJson() => _$ItemToJson(this);
 }
 
-// @JsonLiteral('data.json')
-// Map get glossaryData => _$glossaryDataJsonLiteral;
+@JsonLiteral('data.json')
+Map get glossaryData => _$glossaryDataJsonLiteral;
